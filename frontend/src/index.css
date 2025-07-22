@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* Custom color variables */
+:root {
+  --primary-green: #4CAF50;
+  --secondary-yellow: #FBC02D;
+  --neutral-bg: #F5F5F5;
+  --text-color: #333333;
+  --accent-teal: #26A69A;
+  --hover-green: #388E3C;
+}
+
+/* Active navigation link styles */
+a.active {
+  color: var(--primary-green);
+  font-weight: 600;
+}
+
+a.active hr {
+  display: block;
+  background-color: var(--primary-green);
+}
+
+/* Custom button styles */
+.btn-primary {
+  background-color: var(--primary-green);
+  color: white;
+  border-radius: 9999px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--hover-green);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-secondary {
+  border: 2px solid var(--primary-green);
+  color: var(--primary-green);
+  background-color: transparent;
+  border-radius: 9999px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--primary-green);
+  color: white;
+}
+
+/* Card styles */
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  cursor: pointer;
+}
+
+/* Font family */
+body {
+  font-family: 'Inter', 'Poppins', sans-serif;
+  color: var(--text-color);
+}
