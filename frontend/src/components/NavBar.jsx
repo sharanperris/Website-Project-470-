@@ -1,107 +1,119 @@
-import React, { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const NavBar = () => {
-    const [visible, setVisible] = useState(false)
+    const { isAuthenticated, logout } = useAuth()
+    const [profileDropdown, setProfileDropdown] = useState(false)
+    const navigate = useNavigate()
+    const dropdownRef = useRef(null)
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setProfileDropdown(false)
+            }
+        }
+
+        if (profileDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [profileDropdown])
+
+    const handleItemsClick = (e) => {
+        if (!isAuthenticated()) {
+            e.preventDefault()
+            navigate('/login')
+        }
+    }
+
+    const handleBrowseItemsClick = (e) => {
+        if (!isAuthenticated()) {
+            e.preventDefault()
+            navigate('/login')
+        }
+    }
+
+    const handlePostItemsClick = (e) => {
+        if (!isAuthenticated()) {
+            e.preventDefault()
+            navigate('/login')
+        }
+    }
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        alert('You have been logged out successfully!');
-        window.location.href = '/';
+        logout()
+        setProfileDropdown(false)
+        navigate('/login')
     }
-    
+
     return (
-        <div className='flex items-center justify-between px-6 md:px-12 py-6 bg-white shadow-sm'>
+        <nav className='flex items-center justify-between px-8 py-6 bg-white relative z-50'>
             {/* Logo */}
-            <div className='text-2xl font-bold text-green-600'>
-                Trash To Treasure
+            <div className='text-2xl font-bold text-orange-500'>
+                TRASH TO TREASURE
             </div>
-            
-            {/* Desktop Navigation */}
-            <div className='hidden md:flex items-center gap-8'>
-                <NavLink 
-                    to="/" 
-                    className={({ isActive }) => 
-                        `font-medium transition-all duration-200 hover:text-green-600 hover:font-semibold hover:underline ${
-                            isActive ? 'text-green-600 font-semibold' : 'text-gray-800'
-                        }`
-                    }
-                >
+
+            {/* Navigation Links */}
+            <div className='hidden md:flex items-center space-x-12'>
+                <NavLink to="/" className={({ isActive }) => `text-lg transition-colors ${isActive ? 'text-indigo-400 font-semibold' : 'text-gray-400 hover:text-indigo-400'}`}>
                     Home
                 </NavLink>
-                <NavLink 
-                    to="/about" 
-                    className={({ isActive }) => 
-                        `font-medium transition-all duration-200 hover:text-green-600 hover:font-semibold hover:underline ${
-                            isActive ? 'text-green-600 font-semibold' : 'text-gray-800'
-                        }`
-                    }
-                >
+                <NavLink to="/about" className={({ isActive }) => `text-lg transition-colors ${isActive ? 'text-indigo-400 font-semibold' : 'text-gray-400 hover:text-indigo-400'}`}>
                     About
                 </NavLink>
-                <NavLink 
-                    to="/item" 
-                    className={({ isActive }) => 
-                        `font-medium transition-all duration-200 hover:text-green-600 hover:font-semibold hover:underline ${
-                            isActive ? 'text-green-600 font-semibold' : 'text-gray-800'
-                        }`
-                    }
-                >
-                    Items
+                <NavLink to="/browse-items" onClick={handleBrowseItemsClick} className={({ isActive }) => `text-lg transition-colors ${isActive ? 'text-indigo-400 font-semibold' : 'text-gray-400 hover:text-indigo-400'}`}>
+                    Browse Items
                 </NavLink>
-                <NavLink 
-                    to="/login" 
-                    className={({ isActive }) => 
-                        `font-medium transition-all duration-200 hover:text-green-600 hover:font-semibold hover:underline ${
-                            isActive ? 'text-green-600 font-semibold' : 'text-gray-800'
-                        }`
-                    }
-                >
-                    Log in
+                <NavLink to="/post-items" onClick={handlePostItemsClick} className={({ isActive }) => `text-lg transition-colors ${isActive ? 'text-indigo-400 font-semibold' : 'text-gray-400 hover:text-indigo-400'}`}>
+                    Post Items
                 </NavLink>
-                <Link 
-                    to="/login" 
-                    className='bg-green-500 text-white px-6 py-2 rounded-full font-medium hover:bg-green-600 hover:shadow-lg transition-all duration-200'
-                >
-                    Sign Up
-                </Link>
             </div>
 
-            {/* Mobile Menu Button */}
-            <button 
-                onClick={() => setVisible(true)} 
-                className='md:hidden flex flex-col gap-1 cursor-pointer'
-            >
-                <div className='w-6 h-0.5 bg-gray-800'></div>
-                <div className='w-6 h-0.5 bg-gray-800'></div>
-                <div className='w-6 h-0.5 bg-gray-800'></div>
-            </button>
+            {/* Right Icons */}
+            <div className='flex items-center space-x-4 relative'>
+                {/* User Icon + Dropdown */}
+                <div className='relative' ref={dropdownRef}>
+                    <button
+                        onClick={() => setProfileDropdown(!profileDropdown)}
+                        className='p-2 text-gray-400 hover:text-indigo-400 transition-colors'
+                    >
+                        <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' />
+                        </svg>
+                    </button>
 
-            {/* Mobile sidebar menu */}
-            <div className={`fixed top-0 right-0 bottom-0 overflow-hidden bg-white transition-all z-50 shadow-lg ${visible ? 'w-full' : 'w-0'}`}>
-                <div className='flex flex-col text-gray-800'>
-                    <div onClick={() => setVisible(false)} className='flex items-center gap-4 p-6 cursor-pointer border-b hover:bg-gray-50'>
-                        <span className='text-xl'>←</span>
-                        <p>Back</p>
-                    </div>
-                    <NavLink onClick={()=>setVisible(false)} className='py-4 px-6 border-b hover:bg-green-50 hover:text-green-600 transition-colors' to='/'>
-                        Home
-                    </NavLink>
-                    <NavLink onClick={()=>setVisible(false)} className='py-4 px-6 border-b hover:bg-green-50 hover:text-green-600 transition-colors' to='/about'>
-                        About
-                    </NavLink>
-                    <NavLink onClick={()=>setVisible(false)} className='py-4 px-6 border-b hover:bg-green-50 hover:text-green-600 transition-colors' to='/item'>
-                        Items
-                    </NavLink>
-                    <NavLink onClick={()=>setVisible(false)} className='py-4 px-6 border-b hover:bg-green-50 hover:text-green-600 transition-colors' to='/login'>
-                        Log in
-                    </NavLink>
-                    <Link onClick={()=>setVisible(false)} className='py-4 px-6 border-b hover:bg-green-50 hover:text-green-600 transition-colors' to='/login'>
-                        Sign Up
-                    </Link>
+                    {profileDropdown && (
+                        <div className='absolute top-full right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50'>
+                            {isAuthenticated() ? (
+                                <>
+                                    <Link to="/profile" onClick={() => setProfileDropdown(false)} className='block px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-100'>
+                                        My Profile
+                                    </Link>
+                                    <button onClick={handleLogout} className='block w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors'>
+                                        Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <Link to="/login" onClick={() => setProfileDropdown(false)} className='block px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-100'>
+                                        Login
+                                    </Link>
+                                    <Link to="/login?mode=signup" onClick={() => setProfileDropdown(false)} className='block px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors'>
+                                        Register
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
-        </div>
+        </nav>
     )
 }
 

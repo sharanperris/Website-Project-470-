@@ -1,23 +1,49 @@
-import {Routes, Route} from 'react-router-dom'
-import About from './pages/About'
-import Cart from './pages/Cart'
+import React from 'react'
+import { Routes, Route } from 'react-router-dom'
 import NavBar from './components/NavBar'
-import Login from './pages/Login'
-import Item from './pages/Item'
 import Home from './pages/Home'
+import About from './pages/About'
+import BrowseItem from './pages/BrowseItem'
+import PostItem from './pages/PostItem'
+import Login from './pages/Login'
+import Profile from './pages/Profile'
+import ItemDetails from './pages/ItemDetails'
+import ProtectedRoute from './components/ProtectedRoute'
+import ShopContextProvider from './context/ShopContext' 
 
 const App = () => {
   return (
-    <div>
-      <NavBar />
-      <Routes>
-        <Route path='/' element={<Home/>} />
-        <Route path='/about' element={<About/>} />
-        <Route path='/item' element={<Item/>} />
-        <Route path='/cart' element={<Cart/>} />
-        <Route path='/login' element={<Login/>} />
-      </Routes>
-    </div>
+    <ShopContextProvider>
+      <div className='w-full min-h-screen'>
+        <NavBar />
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/about' element={<About />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/register' element={<Login />} /> 
+          <Route path='/browse-items' element={
+            <ProtectedRoute>
+              <BrowseItem />
+            </ProtectedRoute>
+          } />
+          <Route path='/items/:id' element={
+            <ProtectedRoute>
+              <ItemDetails />
+            </ProtectedRoute>
+          } />
+          <Route path='/post-items' element={
+            <ProtectedRoute>
+              <PostItem />
+            </ProtectedRoute>
+          } />
+          <Route path='/profile' element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </div>
+    </ShopContextProvider>
   )
 }
 

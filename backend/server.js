@@ -3,24 +3,52 @@ import cors from 'cors'
 import 'dotenv/config'
 import connectDB from './config/mongodb.js'
 import connectCloudinary from './config/cloudinary.js'
-import userRouter from './routes/userRoute.js'
+import userRoute from './routes/userRoute.js'
+import itemRoute from './routes/itemRoute.js'
+import multer from 'multer'
 
-//App config
+// App Config
 const app = express()
 const port = process.env.PORT || 4000
-
 connectDB()
 connectCloudinary()
 
-// Middleware
+// middlewares
 app.use(express.json())
 app.use(cors())
 
-// API endpoints
-app.use('/api/user', userRouter)
-app.get('/', (req,res) => {
-    res.send('API IS RUNNING')
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'))
+
+// api endpoints
+app.use('/api/user', userRoute)
+app.use('/api/items', itemRoute)
+
+// Error handling middleware
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.json({
+        success: false,
+        message: 'File too large. Maximum size is 10MB.' 
+      })
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.json({
+        success: false,
+        message: 'Too many files. Maximum is 5 images.'
+      })
+    }
+  }
+  
+  res.json({
+    success: false,
+    message: error.message || 'Something went wrong'
+  })
 })
 
-// Start the server
-app.listen(port, ()=> console.log('Server started on PORT :'+ port))
+app.get('/', (req, res) => {
+  res.send("API Working")
+})
+
+app.listen(port, () => console.log('Server started on PORT : ' + port))
