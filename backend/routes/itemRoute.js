@@ -1,9 +1,9 @@
+import userAuth from '../middleware/userAuth.js';
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
+import { createItem, getItems, claimItem, getItemById, requestItem, updateItemStatus, getUserRequests, updateRequestStatus, checkUserRequest } from '../controllers/itemController.js';
 import fs from 'fs';
-import userAuth from '../middleware/userAuth.js';
-import { createItem, getItems, claimItem, getItemById } from '../controllers/itemController.js';
 
 const router = express.Router();
 
@@ -48,7 +48,22 @@ router.get('/:id', getItemById);
 // POST create new item (protected route)
 router.post('/', userAuth, upload.array('images', 5), createItem);
 
+// POST request to claim an item (protected route)
+router.post('/:id/request', userAuth, requestItem);
+
 // POST claim an item (protected route)
 router.post('/:id/claim', userAuth, claimItem);
+
+// PATCH update item status (protected route)
+router.patch('/:id/status', userAuth, updateItemStatus);
+
+// GET user requests (protected route)
+router.get('/requests', userAuth, getUserRequests);
+
+// PUT update request status (protected route)
+router.put('/requests/:requestId', userAuth, updateRequestStatus);
+
+// GET check if user has requested an item (protected route)
+router.get('/:id/check-request', userAuth, checkUserRequest);
 
 export default router;

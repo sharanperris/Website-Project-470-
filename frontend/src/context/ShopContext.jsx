@@ -56,8 +56,18 @@ const ShopContextProvider = ({ children }) => {
         toast.success('Login successful!')
         return { success: true }
       } else {
-        toast.error(data.message)
-        return { success: false, message: data.message }
+        if (data.requiresVerification) {
+          // Don't show toast error for verification requirement
+          return { 
+            success: false, 
+            message: data.message, 
+            requiresVerification: true,
+            email: data.email 
+          }
+        } else {
+          toast.error(data.message)
+          return { success: false, message: data.message }
+        }
       }
     } catch (error) {
       console.error('Login error:', error)
@@ -79,11 +89,22 @@ const ShopContextProvider = ({ children }) => {
       const data = await response.json()
       
       if (data.success) {
-        setToken(data.token)
-        localStorage.setItem('token', data.token)
-        await getUserData(data.token)
-        toast.success('Registration successful!')
-        return { success: true }
+        if (data.requiresVerification) {
+          // Registration successful but requires OTP verification
+          toast.success('Registration successful! Please verify your email with the OTP.')
+          return { 
+            success: true, 
+            requiresVerification: true,
+            otp: data.otp 
+          }
+        } else {
+          // Old flow for users who don't need verification
+          setToken(data.token)
+          localStorage.setItem('token', data.token)
+          await getUserData(data.token)
+          toast.success('Registration successful!')
+          return { success: true }
+        }
       } else {
         toast.error(data.message)
         return { success: false, message: data.message }

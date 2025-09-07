@@ -8,19 +8,21 @@ import PostItem from './pages/PostItem'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
 import ItemDetails from './pages/ItemDetails'
+import VerifyOTP from './pages/VerifyOtp.jsx'
 import ProtectedRoute from './components/ProtectedRoute'
-import ShopContextProvider from './context/ShopContext' 
+import ShopContextProvider from './context/ShopContext.jsx' 
+import Requests from './pages/Requests'
 
 const App = () => {
   return (
-    <ShopContextProvider>
-      <div className='w-full min-h-screen'>
-        <NavBar />
-        <Routes>
+    <div className='w-full min-h-screen'>
+      <NavBar />
+      <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/about' element={<About />} />
           <Route path='/login' element={<Login />} />
-          <Route path='/register' element={<Login />} /> 
+          <Route path='/register' element={<Login />} />
+          <Route path='/verify-otp' element={<VerifyOTP />} />
           <Route path='/browse-items' element={
             <ProtectedRoute>
               <BrowseItem />
@@ -41,9 +43,13 @@ const App = () => {
               <Profile />
             </ProtectedRoute>
           } />
-        </Routes>
-      </div>
-    </ShopContextProvider>
+          <Route path="/requests" element={
+            <ProtectedRoute>
+              <Requests />
+            </ProtectedRoute>
+          } />
+      </Routes>
+    </div>
   )
 }
 

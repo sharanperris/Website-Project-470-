@@ -1,6 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react'
-import { ShopContext } from '../context/ShopContext'
-import { useAuth } from '../context/AuthContext'
+import { ShopContext } from '../context/ShopContext.jsx'
 import Modal from '../components/Modal'
 import { useNavigate, useLocation } from 'react-router-dom'
 
@@ -16,7 +15,6 @@ const Login = () => {
   const [error, setError] = useState('');
 
   const { login: shopLogin, register } = useContext(ShopContext);
-  const { login: authLogin } = useAuth();
   const navigate = useNavigate();
 
   // Check URL parameters to determine initial state
@@ -48,6 +46,7 @@ const Login = () => {
     navigate('/login');
   };
 
+
   const onSubmitHandler = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -58,16 +57,36 @@ const Login = () => {
       
       if (currentState === 'Sign Up') {
         result = await register(formData.name, formData.email, formData.password);
+        
+        if (result.success) {
+          if (result.requiresVerification) {
+            // Redirect to OTP verification page
+            navigate('/verify-otp', { 
+              state: { email: formData.email } 
+            });
+          } else {
+            // User is already logged in via ShopContext
+            navigate('/');
+          }
+        } else {
+          setError(result.message || 'Something went wrong');
+        }
       } else {
         result = await shopLogin(formData.email, formData.password);
-      }
-
-      if (result.success) {
-        // Update AuthContext with the token
-        authLogin(result.token || localStorage.getItem('token'));
-        navigate('/');
-      } else {
-        setError(result.message || 'Something went wrong');
+        
+        if (result.success) {
+          // User is already logged in via ShopContext
+          navigate('/');
+        } else {
+          if (result.requiresVerification) {
+            // Redirect to OTP verification page for unverified users
+            navigate('/verify-otp', { 
+              state: { email: formData.email } 
+            });
+          } else {
+            setError(result.message || 'Something went wrong');
+          }
+        }
       }
     } catch (error) {
       console.error('Error:', error);

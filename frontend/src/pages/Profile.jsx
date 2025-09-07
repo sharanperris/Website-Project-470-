@@ -1,9 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { ShopContext } from '../context/ShopContext'
+import { ShopContext } from '../context/ShopContext.jsx'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 const Profile = () => {
   const { userData, token, backendUrl, getUserData } = useContext(ShopContext)
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,8 +15,9 @@ const Profile = () => {
   })
   const [loading, setLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [generatingOTP, setGeneratingOTP] = useState(false)
 
-  // Load user data when component mounts or userData changes
+  // Load user data when component mounts
   useEffect(() => {
     if (userData) {
       setFormData({
@@ -94,6 +97,36 @@ const Profile = () => {
     setIsEditing(false)
   }
 
+  const handleVerifyEmail = async () => {
+    try {
+      setGeneratingOTP(true)
+      const response = await fetch(`${backendUrl}/api/user/generate-otp`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('OTP generated! Check console and then verify your email.')
+        // Redirect to OTP verification page
+        navigate('/verify-otp', { 
+          state: { email: userData.email } 
+        })
+      } else {
+        toast.error(data.message || 'Failed to generate OTP')
+      }
+    } catch (error) {
+      console.error('Error generating OTP:', error)
+      toast.error('Error generating OTP. Please try again.')
+    } finally {
+      setGeneratingOTP(false)
+    }
+  }
+
   if (!userData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -116,8 +149,53 @@ const Profile = () => {
                 <h1 className="text-3xl font-bold text-white">My Profile</h1>
                 <p className="text-orange-100 mt-1">Manage your account information</p>
               </div>
+              {/* Verification Status */}
+              <div className="text-right">
+                {userData?.isVerified ? (
+                  <div className="flex items-center text-green-100">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm">Verified</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-red-100">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <span className="text-sm">Not Verified</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Verification Alert */}
+          {userData && !userData.isVerified && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">
+                      Your email address is not verified. Please verify your account to access all features.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleVerifyEmail}
+                  disabled={generatingOTP}
+                  className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-yellow-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generatingOTP ? 'Generating...' : 'Verify Email'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <div className="px-6 py-8">

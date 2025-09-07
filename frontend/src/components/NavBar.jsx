@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { ShopContext } from '../context/ShopContext'
 
 const NavBar = () => {
-    const { isAuthenticated, logout } = useAuth()
+    const { token, userData, logout } = useContext(ShopContext)
+    const isAuthenticated = !!token
     const [profileDropdown, setProfileDropdown] = useState(false)
     const navigate = useNavigate()
     const dropdownRef = useRef(null)
@@ -90,10 +91,13 @@ const NavBar = () => {
 
                     {profileDropdown && (
                         <div className='absolute top-full right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50'>
-                            {isAuthenticated() ? (
+                            {isAuthenticated ? (
                                 <>
                                     <Link to="/profile" onClick={() => setProfileDropdown(false)} className='block px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-100'>
                                         My Profile
+                                    </Link>
+                                    <Link to="/requests" onClick={() => setProfileDropdown(false)} className='block px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-100'>
+                                        Requests
                                     </Link>
                                     <button onClick={handleLogout} className='block w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors'>
                                         Logout

@@ -11,7 +11,9 @@ const ItemDetails = () => {
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [claiming, setClaiming] = useState(false)
+  const [requesting, setRequesting] = useState(false)
+  const [hasRequested, setHasRequested] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
 
   // Fetch item details
   const fetchItem = async () => {
@@ -29,6 +31,16 @@ const ItemDetails = () => {
       
       if (data.success) {
         setItem(data.item)
+        console.log('Item data:', data.item)
+        console.log('User request:', data.item.userRequest)
+        // Check if user has already requested this item
+        if (data.item.userRequest && data.item.userRequest.status === 'pending') {
+          setHasRequested(true)
+          console.log('User has requested this item')
+        } else {
+          setHasRequested(false)
+          console.log('User has not requested this item')
+        }
       } else {
         toast.error(data.message || 'Item not found')
         navigate('/browse-items')
@@ -42,11 +54,11 @@ const ItemDetails = () => {
     }
   }
 
-  // Handle item claim
-  const handleClaimItem = async () => {
+  // Handle item request
+  const handleRequestItem = async () => {
     try {
-      setClaiming(true)
-      const response = await fetch(`${backendUrl}/api/items/${id}/claim`, {
+      setRequesting(true)
+      const response = await fetch(`${backendUrl}/api/items/${id}/request`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -57,16 +69,50 @@ const ItemDetails = () => {
       const data = await response.json()
       
       if (data.success) {
-        toast.success('Item claimed successfully!')
-        fetchItem() // Refresh item data
+        toast.success('Request sent successfully!')
+        setHasRequested(true) // Update local state
       } else {
-        toast.error(data.message || 'Failed to claim item')
+        // Check if the error is because user already requested
+        if (data.message && data.message.includes('already requested')) {
+          setHasRequested(true) // Set to true if already requested
+        }
+        toast.error(data.message || 'Failed to send request')
       }
     } catch (error) {
-      console.error('Error claiming item:', error)
-      toast.error('Error claiming item. Please try again.')
+      console.error('Error requesting item:', error)
+      toast.error('Error sending request. Please try again.')
     } finally {
-      setClaiming(false)
+      setRequesting(false)
+    }
+  }
+
+  // Handle item status update
+  const handleStatusUpdate = async (newStatus) => {
+    try {
+      setUpdatingStatus(true)
+      const response = await fetch(`${backendUrl}/api/items/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success('Item status updated successfully!')
+        // Refresh item data
+        fetchItem()
+      } else {
+        toast.error(data.message || 'Failed to update item status')
+      }
+    } catch (error) {
+      console.error('Error updating item status:', error)
+      toast.error('Error updating item status. Please try again.')
+    } finally {
+      setUpdatingStatus(false)
     }
   }
 
@@ -101,7 +147,17 @@ const ItemDetails = () => {
     )
   }
 
-  const canClaim = item.status === 'Available' && item.postedBy._id !== userData?._id
+  // Check if user can request this item
+  const canRequest = item.status === 'Available' && 
+                    item.postedBy._id !== userData?._id && 
+                    !hasRequested
+
+  console.log('Button logic:', {
+    itemStatus: item?.status,
+    isOwner: item?.postedBy?._id === userData?._id,
+    hasRequested,
+    canRequest
+  })
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -176,11 +232,14 @@ const ItemDetails = () => {
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
                   item.status === 'Available' 
                     ? 'bg-green-100 text-green-800' 
+                    : item.status === 'Claimed'
+                    ? 'bg-blue-100 text-blue-800'
                     : 'bg-red-100 text-red-800'
                 }`}>
                   {item.status}
                 </span>
               </div>
+
 
               {/* Title */}
               <h1 className="text-3xl font-bold text-slate-900 mb-4">{item.title}</h1>
@@ -248,31 +307,54 @@ const ItemDetails = () => {
                 </div>
               )}
 
+              {/* Requested Info */}
+              {hasRequested && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-2">Request Sent</h3>
+                  <p className="text-blue-600">
+                    Your request for this item has been sent. The owner will review your request soon.
+                  </p>
+                </div>
+              )}
+
               {/* Action Button */}
               <div className="pt-6 border-t border-gray-200">
-                {canClaim ? (
+                {canRequest ? (
                   <button
-                    onClick={handleClaimItem}
-                    disabled={claiming}
+                    onClick={handleRequestItem}
+                    disabled={requesting}
                     className="w-full bg-orange-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
-                    {claiming ? (
+                    {requesting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Claiming...</span>
+                        <span>Sending Request...</span>
                       </>
                     ) : (
                       <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>Claim This Item</span>
+                        <span>Request To Claim</span>
                       </>
                     )}
                   </button>
+                ) : hasRequested ? (
+                  <button
+                    disabled
+                    className="w-full bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Requested</span>
+                  </button>
                 ) : item.postedBy?._id === userData?._id ? (
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <p className="text-blue-800 font-medium">This is your item</p>
+                    <p className="text-blue-800 font-medium mb-3">This is your item</p>
+                    <Link
+                      to="/requests"
+                      className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors duration-200"
+                    >
+                      View Requests
+                    </Link>
                   </div>
                 ) : (
                   <div className="text-center p-4 bg-gray-50 rounded-lg">

@@ -5,15 +5,15 @@ import App from './App.jsx'
 import { BrowserRouter } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { AuthProvider } from './context/AuthContext.jsx'
+import ShopContextProvider from './context/ShopContext.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
+      <ShopContextProvider>
         <App />
         <ToastContainer />
-      </AuthProvider>
+      </ShopContextProvider>
     </BrowserRouter>
   </React.StrictMode>,
 )

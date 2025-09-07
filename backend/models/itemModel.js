@@ -29,7 +29,7 @@ const itemSchema = new mongoose.Schema({
   }],
   status: { 
     type: String, 
-    enum: ['Available', 'Claimed', 'Removed'],
+    enum: ['Available', 'Claimed'],
     default: 'Available' 
   },
   postedBy: { 
@@ -43,8 +43,24 @@ const itemSchema = new mongoose.Schema({
   },
   claimedAt: {
     type: Date
-  }
+  },
+  requests: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'rejected'],
+      default: 'pending'
+    },
+    requestedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, { timestamps: true });
 
-const Item = mongoose.model('Item', itemSchema);
-export default Item;
+const itemModel = mongoose.models.item || mongoose.model('item', itemSchema);
+export default itemModel;

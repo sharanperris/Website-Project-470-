@@ -2,6 +2,7 @@ import userModel from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import jwt from "jsonwebtoken";
+import { generateOTPForUser } from "./otpController.js";
 
 const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET);
@@ -35,9 +36,15 @@ const registerUser = async (req, res) => {
     });
 
     const user = await newUser.save();
-    const token = createToken(user._id);
 
-    res.json({ success: true, token });
+    // Generate OTP for new user
+    const otp = await generateOTPForUser(email);
+
+    res.json({ 
+      success: true, 
+      message: 'Registration successful! Please verify your account with the OTP.',
+      requiresVerification: true
+    });
 
   } catch (error) {
     console.log(error);
@@ -57,6 +64,27 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (isMatch) {
+      // Check if account is verified (handle existing users who might not have this field)
+      const isVerified = user.isVerified !== undefined ? user.isVerified : false;
+      
+      if (!isVerified) {
+        // For existing users without isVerified field, set it to false and generate OTP
+        if (user.isVerified === undefined) {
+          user.isVerified = false;
+          await user.save();
+        }
+        
+        // Generate new OTP for unverified user
+        const otp = await generateOTPForUser(email);
+        
+        return res.json({ 
+          success: false, 
+          message: 'Account not verified. Please verify using OTP.',
+          requiresVerification: true,
+          email: email
+        });
+      }
+
       const token = createToken(user._id);
       res.json({ success: true, token });
     } else {
@@ -147,4 +175,41 @@ const updateUserProfile = async (req, res) => {
   }
 }
 
-export { registerUser, loginUser, adminLogin, getUserProfile, updateUserProfile }
+// Fix existing users (admin route)
+const fixExistingUsers = async (req, res) => {
+  try {
+    // Update all users who don't have isVerified field to be verified
+    const updateResult = await userModel.updateMany(
+      {
+        $or: [
+          { isVerified: { $exists: false } },
+          { isVerified: null },
+          { isVerified: undefined }
+        ]
+      },
+      {
+        $set: { 
+          isVerified: true,  // Mark existing users as verified
+          otp: null,
+          otpExpires: null
+        }
+      }
+    );
+
+    console.log(`✅ Fixed ${updateResult.modifiedCount} existing users`);
+
+    res.json({
+      success: true,
+      message: `Successfully updated ${updateResult.modifiedCount} existing users`,
+      modifiedCount: updateResult.modifiedCount
+    });
+  } catch (error) {
+    console.error('Error fixing existing users:', error);
+    res.json({
+      success: false,
+      message: 'Error fixing existing users'
+    });
+  }
+};
+
+export { registerUser, loginUser, adminLogin, getUserProfile, updateUserProfile, fixExistingUsers }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { assets } from '../assets/assets'
-import { ShopContext } from '../context/ShopContext' 
+import ShopContext from '../context/ShopContext.jsx'
 
 const Home = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)

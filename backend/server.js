@@ -2,16 +2,15 @@ import express from 'express'
 import cors from 'cors'
 import 'dotenv/config'
 import connectDB from './config/mongodb.js'
-import connectCloudinary from './config/cloudinary.js'
 import userRoute from './routes/userRoute.js'
 import itemRoute from './routes/itemRoute.js'
+import requestRoute from './routes/requestRoute.js'
 import multer from 'multer'
 
 // App Config
 const app = express()
 const port = process.env.PORT || 4000
 connectDB()
-connectCloudinary()
 
 // middlewares
 app.use(express.json())
@@ -23,6 +22,7 @@ app.use('/uploads', express.static('uploads'))
 // api endpoints
 app.use('/api/user', userRoute)
 app.use('/api/items', itemRoute)
+app.use('/api/requests', requestRoute)
 
 // Error handling middleware
 app.use((error, req, res, next) => {

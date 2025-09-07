@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { ShopContext } from '../context/ShopContext'
-import { toast } from 'react-toastify'
 import { Link } from 'react-router-dom'
 
 const BrowseItem = () => {
@@ -10,7 +9,7 @@ const BrowseItem = () => {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [filteredItems, setFilteredItems] = useState([])
 
-  const { token, backendUrl } = useContext(ShopContext)
+  const { token, backendUrl, userData } = useContext(ShopContext)
 
   // Categories for filtering
   const categories = [
@@ -33,14 +32,15 @@ const BrowseItem = () => {
       const data = await response.json()
       
       if (data.success) {
+        // Show all items (Available and Claimed)
         setItems(data.items)
         setFilteredItems(data.items)
       } else {
-        toast.error(data.message || 'Failed to fetch items')
+        // toast.error(data.message || 'Failed to fetch items') // Removed toast
       }
     } catch (error) {
       console.error('Error fetching items:', error)
-      toast.error('Error loading items. Please try again.')
+      // toast.error('Error loading items. Please try again.') // Removed toast
     } finally {
       setLoading(false)
     }
@@ -70,31 +70,6 @@ const BrowseItem = () => {
   useEffect(() => {
     fetchItems()
   }, [])
-
-  // Handle item claim/request
-  const handleClaimItem = async (itemId) => {
-    try {
-      const response = await fetch(`${backendUrl}/api/items/${itemId}/claim`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      const data = await response.json()
-      
-      if (data.success) {
-        toast.success('Item claimed successfully!')
-        fetchItems() // Refresh the list
-      } else {
-        toast.error(data.message || 'Failed to claim item')
-      }
-    } catch (error) {
-      console.error('Error claiming item:', error)
-      toast.error('Error claiming item. Please try again.')
-    }
-  }
 
   if (loading) {
     return (
@@ -182,7 +157,7 @@ const BrowseItem = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredItems.map((item) => (
-              <Link key={item._id} to={`/items/${item._id}`} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div key={item._id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full">
                 {/* Item Image */}
                 <div className="h-48 bg-slate-200 relative">
                   {item.images && item.images.length > 0 ? (
@@ -205,32 +180,50 @@ const BrowseItem = () => {
                       {item.category}
                     </span>
                   </div>
+                  
+                  {/* Status Badge */}
+                  <div className="absolute top-2 right-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      item.status === 'Available' 
+                        ? 'bg-green-100 text-green-800' 
+                        : item.status === 'Claimed'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {item.status}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Item Details */}
-                <div className="p-4">
+                <div className="p-4 flex flex-col flex-grow">
                   <h3 className="text-lg font-semibold text-slate-900 mb-2 line-clamp-1">
                     {item.title}
                   </h3>
                   
-                  <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+                  <p className="text-slate-600 text-sm mb-3 line-clamp-2 flex-grow">
                     {item.description}
                   </p>
 
                   <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
                     <span>📍 {item.location}</span>
-                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                   </div>
 
-                  {/* Action Button */}
-                  <button
-                    onClick={() => handleClaimItem(item._id)}
-                    className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors duration-200"
-                  >
-                    Claim Item
-                  </button>
+                  <div className="mb-4">
+                    <span className="text-sm text-slate-500">{new Date(item.createdAt).toLocaleDateString()}</span>
+                  </div>
+
+                  {/* Action Button - Always at bottom */}
+                  <div className="mt-auto">
+                    <Link
+                      to={`/items/${item._id}`}
+                      className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors duration-200 block text-center"
+                    >
+                      View Details
+                    </Link>
+                  </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
